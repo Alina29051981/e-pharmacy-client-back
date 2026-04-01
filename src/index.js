@@ -1,3 +1,5 @@
+// src/index.js
+
 import authRoutes from "./routes/authRoutes.js";
 import { errorHandler } from "./middleware/errorMiddleware.js";
 import express from "express";
