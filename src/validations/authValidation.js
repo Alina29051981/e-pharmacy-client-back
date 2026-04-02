@@ -1,3 +1,4 @@
+// src/validations/authValidation.js
 import { Joi, Segments } from "celebrate";
 
 export const registerUserSchema = {
