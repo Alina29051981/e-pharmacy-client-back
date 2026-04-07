@@ -4,13 +4,16 @@ import User from "../models/user.js";
 
 export const authMiddleware = async (req, res, next) => {
     try {
+        const authHeader = req.headers.authorization;
+
         const accessToken =
             req.cookies?.accessToken ||
-            (req.headers.authorization &&
-                req.headers.authorization.split(" ")[1]);
+            (authHeader?.startsWith("Bearer ")
+                ? authHeader.split(" ")[1]
+                : null);
 
         if (!accessToken) {
-            return next(createError(401, "No token provided"));
+            return next(createError(401, "No access token provided"));
         }
 
         const session = await Session.findOne({ accessToken });
@@ -19,9 +22,10 @@ export const authMiddleware = async (req, res, next) => {
             return next(createError(401, "Session not found"));
         }
 
-        const isExpired = new Date() > new Date(session.accessTokenValidUntil);
+        const isAccessTokenExpired =
+            new Date() > new Date(session.accessTokenValidUntil);
 
-        if (isExpired) {
+        if (isAccessTokenExpired) {
             return next(createError(401, "Access token expired"));
         }
 
@@ -35,7 +39,8 @@ export const authMiddleware = async (req, res, next) => {
         req.session = session;
 
         next();
-    } catch {
+    } catch (err) {
+        console.error("Auth middleware error:", err);
         next(createError(401, "Unauthorized"));
     }
 };

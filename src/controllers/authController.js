@@ -7,7 +7,7 @@ import { Session } from "../models/session.js";
 import { createSession, setSessionCookies } from "../services/auth.js";
 
 // REGISTER
-export const register = async (req, res, next) => {
+export const registerUser = async (req, res, next) => {
     try {
         const { name, email, phone, password } = req.body;
 
@@ -41,7 +41,7 @@ export const register = async (req, res, next) => {
 };
 
 // LOGIN
-export const login = async (req, res, next) => {
+export const loginUser = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
@@ -71,7 +71,7 @@ export const login = async (req, res, next) => {
 };
 
 // LOGOUT
-export const logout = async (req, res) => {
+export const logoutUser = async (req, res) => {
     const { sessionId } = req.cookies;
 
     if (sessionId) {
@@ -85,11 +85,53 @@ export const logout = async (req, res) => {
     res.status(204).send();
 };
 
+export const refreshUserSession = async (req, res, next) => {
+    try {
+        const { sessionId, refreshToken } = req.cookies;
+
+        const session = await Session.findOne({
+            _id: sessionId,
+            refreshToken,
+        });
+
+        if (!session) {
+            return next(createError(401, "Session not found"));
+        }
+
+        const isExpired = new Date() > new Date(session.refreshTokenValidUntil);
+
+        if (isExpired) {
+            return next(createError(401, "Refresh token expired"));
+        }
+
+        await Session.deleteOne({ _id: session._id });
+
+        const newSession = await createSession(session.userId);
+        setSessionCookies(res, newSession);
+
+        res.json({ message: "Session refreshed" });
+    } catch (err) {
+        next(err);
+    }
+};
+
 // USER INFO
 export const getUserInfo = async (req, res) => {
     res.json({
         id: req.user._id,
         email: req.user.email,
         name: req.user.name,
+    });
+};
+
+export const requestResetEmail = async (req, res) => {
+    res.json({
+        message: "Reset email sent (not implemented yet)",
+    });
+};
+
+export const resetPassword = async (req, res) => {
+    res.json({
+        message: "Password reset (not implemented yet)",
     });
 };
