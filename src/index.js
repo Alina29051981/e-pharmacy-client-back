@@ -1,54 +1,50 @@
 // src/index.js
+
+import cookieParser from "cookie-parser";
 import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
+import cors from "cors";
+import { errors as celebrateErrors } from "celebrate";
+import productRoutes from "./routes/productRoutes.js";
+import statisticsRoutes from "./routes/statisticsRoutes.js";
+import { logger } from "./middleware/logger.js";
+import { connectMongoDB } from "./db/connectMongoDB.js";
 
 import authRoutes from "./routes/authRoutes.js";
-import { errorHandler } from "./middleware/errorMiddleware.js";
-import { connectMongoDB } from "./db/connectMongoDB.js";
+
+import shopRoutes from "./routes/shopRoutes.js";
+
+import { notFoundHandler } from "./middleware/notFoundHandler.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT ?? 3000;
 
-/**
- * =====================
- * CORE MIDDLEWARE
- * =====================
- */
-app.use(cors());
+app.use(logger);
+app.use(
+    cors({
+        origin: true,
+        credentials: true,
+    }),
+);
 app.use(express.json());
+app.use(cookieParser());
 
-/**
- * =====================
- * DB CONNECTION
- * =====================
- */
-connectMongoDB();
-
-/**
- * =====================
- * ROUTES
- * =====================
- */
+// 📌 ROUTES
 app.use("/api/user", authRoutes);
+app.use("/api/shop", shopRoutes);
+app.use("/api/shop", productRoutes);
+app.use("/api/statistics", statisticsRoutes);
 
-/**
- * =====================
- * TEST ROUTE
- * =====================
- */
-app.get("/", (req, res) => {
-    res.send("Server running");
-});
-
-/**
- * =====================
- * ERROR HANDLER (LAST)
- * =====================
- */
+// 📌 ERRORS (ПРАВИЛЬНИЙ ПОРЯДОК)
+app.use(celebrateErrors());
+app.use(notFoundHandler);
 app.use(errorHandler);
 
-app.listen(5000, () => {
-    console.log("Server started on port 5000");
+await connectMongoDB();
+
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });

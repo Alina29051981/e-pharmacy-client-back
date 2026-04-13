@@ -1,3 +1,5 @@
+// src/routes/authRoutes.js
+
 import { Router } from "express";
 import { celebrate } from "celebrate";
 
@@ -35,7 +37,7 @@ router.post("/register", celebrate(registerUserSchema), registerUser);
 router.post("/login", celebrate(loginUserSchema), loginUser);
 
 // refresh session
-router.post("/refresh", refreshUserSession);
+router.post("/refresh", authMiddleware, refreshUserSession);
 
 /**
  * ======================
