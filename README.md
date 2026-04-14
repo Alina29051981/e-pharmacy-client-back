@@ -72,3 +72,48 @@ src/
 ├── constants/ # Time constants
 └── index.js # App entry point
 ```
+
+## Installation
+
+```bash
+git clone https://github.com/your-username/e-pharmacy-back.git
+cd e-pharmacy-back
+npm install
+```
+
+Create Environment Variables file:
+
+```
+PORT=3000
+MONGO_URL=your_mongodb_connection_string
+NODE_ENV=development
+```
+
+## API Endpoints
+
+### Auth
+
+POST /api/user/register
+POST /api/user/login
+POST /api/user/logout
+POST /api/user/refresh
+GET /api/user/user-info
+
+### Shop
+
+POST /api/shop/create
+GET /api/shop/:shopId
+PUT /api/shop/:shopId/update
+
+### Products
+
+GET /api/shop/:shopId/product
+POST /api/shop/:shopId/product
+GET /api/shop/:shopId/product/:productId
+PUT /api/shop/:shopId/product/:productId
+DELETE /api/shop/:shopId/product/:productId
+
+### Statistics
+
+GET /api/statistics?shopId=...
+GET /api/statistics/:userId/goods
