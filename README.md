@@ -44,3 +44,31 @@ Supports authentication, shop management, product catalog, and sales statistics.
 - Input validation (Joi / Celebrate)
 
 ---
+
+## Tech Stack
+
+- Node.js
+- Express.js
+- MongoDB + Mongoose
+- JWT-style session auth
+- bcryptjs
+- celebrate (Joi validation)
+- cookie-parser
+- cors
+
+---
+
+## Project Structure
+
+```
+src/
+├── controllers/ # Business logic
+├── middleware/ # Auth, error handling, access control
+├── models/ # MongoDB schemas
+├── routes/ # API routes
+├── services/ # Auth/session logic
+├── validations/ # Joi schemas
+├── db/ # MongoDB connection
+├── constants/ # Time constants
+└── index.js # App entry point
+```
