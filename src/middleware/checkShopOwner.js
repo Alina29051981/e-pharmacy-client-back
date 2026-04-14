@@ -8,7 +8,6 @@ export const checkShopOwner = async (req, res, next) => {
     try {
         const shopId = req.params.shopId || req.query.shopId;
 
-        // ❗ перевірка валідності ID
         if (!mongoose.Types.ObjectId.isValid(shopId)) {
             return next(createError(400, "Invalid shopId"));
         }
@@ -19,12 +18,10 @@ export const checkShopOwner = async (req, res, next) => {
             return next(createError(404, "Shop not found"));
         }
 
-        // 🔐 перевірка власника магазину
         if (shop.owner.toString() !== req.user._id.toString()) {
             return next(createError(403, "Forbidden: not your shop"));
         }
 
-        // щоб не робити повторний запит в контролерах
         req.shop = shop;
 
         next();

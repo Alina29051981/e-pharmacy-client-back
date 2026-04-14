@@ -2,10 +2,8 @@
 
 import { Joi, Segments } from "celebrate";
 
-// 📌 ObjectId перевірка
 const objectId = Joi.string().hex().length(24);
 
-// 📌 GET /:shopId/product/:productId
 export const productIdSchema = {
     [Segments.PARAMS]: Joi.object().keys({
         shopId: objectId.required(),
@@ -13,7 +11,6 @@ export const productIdSchema = {
     }),
 };
 
-// 📌 POST /add
 export const createProductSchema = {
     [Segments.PARAMS]: Joi.object().keys({
         shopId: objectId.required(),
@@ -34,7 +31,6 @@ export const createProductSchema = {
     }),
 };
 
-// 📌 PUT /edit
 export const updateProductSchema = {
     [Segments.PARAMS]: Joi.object().keys({
         shopId: objectId.required(),
@@ -55,7 +51,7 @@ export const updateProductSchema = {
 
             suppliers: Joi.array().items(Joi.string()),
         })
-        .min(1), // 🔥 хоча б одне поле для апдейту
+        .min(1),
 };
 
 export const getProductsSchema = {

@@ -4,9 +4,6 @@ import Shop from "../models/shop.js";
 import createError from "http-errors";
 import mongoose from "mongoose";
 
-/**
- * 📌 POST /api/shop/create
- */
 export const createShop = async (req, res, next) => {
     try {
         const { name, email, phone, address, logo } = req.body;
@@ -31,9 +28,6 @@ export const createShop = async (req, res, next) => {
     }
 };
 
-/**
- * 📌 GET /api/shop/:shopId
- */
 export const getShopById = async (req, res, next) => {
     try {
         const { shopId } = req.params;
@@ -58,9 +52,6 @@ export const getShopById = async (req, res, next) => {
     }
 };
 
-/**
- * 📌 PUT /api/shop/:shopId/update
- */
 export const updateShop = async (req, res, next) => {
     try {
         const { shopId } = req.params;

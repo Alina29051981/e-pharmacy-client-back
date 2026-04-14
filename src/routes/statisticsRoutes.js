@@ -11,17 +11,8 @@ import {
 
 const router = Router();
 
-/**
- * 📊 GET /api/statistics
- * Загальна статистика магазину
- * (shopId передається через query: ?shopId=...)
- */
 router.get("/", authMiddleware, checkShopOwner, getStatistics);
 
-/**
- * 👤 GET /api/statistics/:userId/goods
- * Покупки конкретного користувача
- */
 router.get("/:userId/goods", authMiddleware, getUserPurchases);
 
 export default router;

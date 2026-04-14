@@ -12,19 +12,10 @@ import {
 
 const router = Router();
 
-/**
- * 📌 POST /api/shop/create
- */
 router.post("/create", authMiddleware, createShop);
 
-/**
- * 📌 GET /api/shop/:shopId
- */
 router.get("/:shopId", authMiddleware, getShopById);
 
-/**
- * 📌 PUT /api/shop/:shopId/update
- */
 router.put("/:shopId/update", authMiddleware, checkShopOwner, updateShop);
 
 router.get("/:shopId/product", authMiddleware, checkShopOwner, getProducts);

@@ -9,11 +9,8 @@ import productRoutes from "./routes/productRoutes.js";
 import statisticsRoutes from "./routes/statisticsRoutes.js";
 import { logger } from "./middleware/logger.js";
 import { connectMongoDB } from "./db/connectMongoDB.js";
-
 import authRoutes from "./routes/authRoutes.js";
-
 import shopRoutes from "./routes/shopRoutes.js";
-
 import { notFoundHandler } from "./middleware/notFoundHandler.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
@@ -32,13 +29,11 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-// 📌 ROUTES
 app.use("/api/user", authRoutes);
 app.use("/api/shop", shopRoutes);
 app.use("/api/shop", productRoutes);
 app.use("/api/statistics", statisticsRoutes);
 
-// 📌 ERRORS (ПРАВИЛЬНИЙ ПОРЯДОК)
 app.use(celebrateErrors());
 app.use(notFoundHandler);
 app.use(errorHandler);

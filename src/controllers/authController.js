@@ -6,7 +6,6 @@ import User from "../models/user.js";
 import { Session } from "../models/session.js";
 import { createSession, setSessionCookies } from "../services/auth.js";
 
-// REGISTER
 export const registerUser = async (req, res, next) => {
     try {
         const { name, email, phone, password } = req.body;
@@ -40,7 +39,6 @@ export const registerUser = async (req, res, next) => {
     }
 };
 
-// LOGIN
 export const loginUser = async (req, res, next) => {
     try {
         const { email, password } = req.body;
@@ -70,7 +68,6 @@ export const loginUser = async (req, res, next) => {
     }
 };
 
-// LOGOUT
 export const logoutUser = async (req, res) => {
     const { sessionId } = req.cookies;
 
@@ -115,7 +112,6 @@ export const refreshUserSession = async (req, res, next) => {
     }
 };
 
-// USER INFO
 export const getUserInfo = async (req, res) => {
     res.json({
         id: req.user._id,

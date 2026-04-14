@@ -4,9 +4,6 @@ import Product from "../models/product.js";
 import Purchase from "../models/purchase.js";
 import createError from "http-errors";
 
-/**
- * GET /api/statistics?shopId=
- */
 export const getStatistics = async (req, res, next) => {
     try {
         const shopId = req.query.shopId || req.params.shopId;
@@ -17,10 +14,8 @@ export const getStatistics = async (req, res, next) => {
 
         const shopObjectId = new mongoose.Types.ObjectId(shopId);
 
-        // 📦 1. Кількість продуктів
         const productsCount = await Product.countDocuments({ shopId });
 
-        // 💰 2. Агрегована статистика покупок (ефективніше ніж find + reduce)
         const stats = await Purchase.aggregate([
             { $match: { shopId: shopObjectId } },
 
@@ -36,7 +31,6 @@ export const getStatistics = async (req, res, next) => {
         const totalRevenue = stats[0]?.totalRevenue || 0;
         const purchasesCount = stats[0]?.purchasesCount || 0;
 
-        // 👥 3. Останні клієнти
         const lastClients = await Purchase.aggregate([
             { $match: { shopId: shopObjectId } },
 

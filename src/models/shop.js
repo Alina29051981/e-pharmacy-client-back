@@ -31,7 +31,7 @@ const shopSchema = new mongoose.Schema(
         },
 
         logo: {
-            type: String, // URL або шлях до файлу
+            type: String,
         },
     },
     { timestamps: true },

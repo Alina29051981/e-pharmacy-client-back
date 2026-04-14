@@ -3,9 +3,6 @@ import Product from "../models/product.js";
 import createError from "http-errors";
 import mongoose from "mongoose";
 
-/**
- * 📦 GET /api/shop/:shopId/product
- */
 export const getProducts = async (req, res, next) => {
     try {
         const { search, category } = req.query;
@@ -36,12 +33,8 @@ export const getProducts = async (req, res, next) => {
     }
 };
 
-/**
- * 📦 GET /api/shop/:shopId/product/:productId
- */
 export const getProductById = async (req, res, next) => {
     try {
-        // ✅ беремо з middleware
         if (!req.product) {
             return next(createError(404, "Product not found"));
         }
@@ -53,9 +46,6 @@ export const getProductById = async (req, res, next) => {
     }
 };
 
-/**
- * ➕ POST /api/shop/:shopId/product
- */
 export const addProduct = async (req, res, next) => {
     try {
         const { shopId } = req.params;
@@ -90,12 +80,8 @@ export const addProduct = async (req, res, next) => {
     }
 };
 
-/**
- * ✏️ PUT /api/shop/:shopId/product/:productId
- */
 export const updateProduct = async (req, res, next) => {
     try {
-        // ✅ вже перевірено middleware
         if (!req.product) {
             return next(createError(404, "Product not found"));
         }
@@ -111,9 +97,6 @@ export const updateProduct = async (req, res, next) => {
     }
 };
 
-/**
- * ❌ DELETE /api/shop/:shopId/product/:productId
- */
 export const deleteProduct = async (req, res, next) => {
     try {
         if (!req.product) {

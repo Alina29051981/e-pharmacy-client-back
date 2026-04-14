@@ -14,10 +14,8 @@ import {
 
 const router = Router();
 
-// 🔐 тільки власник може створювати
 router.post("/:shopId/product", authMiddleware, checkShopOwner, addProduct);
 
-// 🔐 тільки власник змінює
 router.put(
     "/:shopId/product/:productId",
     authMiddleware,
@@ -26,7 +24,6 @@ router.put(
     updateProduct,
 );
 
-// 🔐 тільки власник видаляє
 router.delete(
     "/:shopId/product/:productId",
     authMiddleware,
@@ -35,7 +32,6 @@ router.delete(
     deleteProduct,
 );
 
-// 👁 перегляд (може бути доступний всім авторизованим)
 router.get(
     "/:shopId/product/:productId",
     authMiddleware,
