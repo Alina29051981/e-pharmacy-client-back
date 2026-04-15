@@ -117,3 +117,30 @@ DELETE /api/shop/:shopId/product/:productId
 
 GET /api/statistics?shopId=...
 GET /api/statistics/:userId/goods
+
+## Authentication Flow
+
+1. User logs in
+2. Server creates session:
+
+- accessToken (short-lived)
+- refreshToken (long-lived)
+
+3. Tokens stored in HTTP-only cookies
+4. Middleware validates session on each request
+
+## Key Architecture Decisions
+
+- Middleware-based access control for reusability
+- Session storage in MongoDB (not only JWT)
+- Separation of concerns (controllers/services/middleware)
+- Centralized error handling
+- Strict validation layer (Celebrate + Joi)
+
+## Example Business Flow
+
+1. User registers
+2. User creates shop
+3. Owner adds products
+4. Customers buy products (purchase model)
+5. Statistics aggregates revenue & activity
