@@ -1,5 +1,4 @@
 // src/routes/authRoutes.js
-
 import { Router } from "express";
 import { celebrate } from "celebrate";
 
@@ -7,7 +6,7 @@ import {
     registerUser,
     loginUser,
     logoutUser,
-    refreshUserSession,
+    refreshToken,
     requestResetEmail,
     resetPassword,
     getUserInfo,
@@ -24,16 +23,26 @@ import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
+//
+// ===================== AUTH =====================
+//
 router.post("/register", celebrate(registerUserSchema), registerUser);
 
 router.post("/login", celebrate(loginUserSchema), loginUser);
 
-router.post("/refresh", authMiddleware, refreshUserSession);
+//
+// ===================== PRIVATE ROUTES =====================
+// (ONLY COOKIE AUTH VIA middleware)
+//
+router.get("/user-info", authMiddleware, getUserInfo);
 
 router.post("/logout", authMiddleware, logoutUser);
 
-router.get("/user-info", authMiddleware, getUserInfo);
+router.post("/refresh", refreshToken);
 
+//
+// ===================== PASSWORD RESET =====================
+//
 router.post(
     "/request-reset-email",
     celebrate(requestResetEmailSchema),

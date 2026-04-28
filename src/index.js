@@ -16,18 +16,23 @@ import { errorHandler } from "./middleware/errorHandler.js";
 
 dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT ?? 3000;
+if (!process.env.JWT_ACCESS_SECRET || !process.env.JWT_REFRESH_SECRET) {
+    throw new Error("❌ Missing JWT secrets in .env");
+}
 
-app.use(logger);
+const app = express();
+const PORT = process.env.PORT ?? 5000;
+
 app.use(
     cors({
-        origin: true,
+        origin: "http://localhost:3000",
         credentials: true,
     }),
 );
-app.use(express.json());
+
 app.use(cookieParser());
+app.use(express.json());
+app.use(logger);
 
 app.use("/api/user", authRoutes);
 app.use("/api/shop", shopRoutes);

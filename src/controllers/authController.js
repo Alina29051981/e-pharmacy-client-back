@@ -2,18 +2,22 @@
 
 import bcrypt from "bcryptjs";
 import createError from "http-errors";
-import User from "../models/user.js";
-import { Session } from "../models/session.js";
-import { createSession, setSessionCookies } from "../services/auth.js";
+import crypto from "crypto";
+import jwt from "jsonwebtoken";
 
+import User from "../models/user.js";
+import { sendResetEmail } from "../services/emailService.js";
+import { generateTokens } from "../services/jwt.js";
+
+//
+// ===================== REGISTER =====================
+//
 export const registerUser = async (req, res, next) => {
     try {
         const { name, email, phone, password } = req.body;
 
         const exists = await User.findOne({ email });
-        if (exists) {
-            return next(createError(409, "Email already in use"));
-        }
+        if (exists) return next(createError(409, "Email already in use"));
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -24,110 +28,137 @@ export const registerUser = async (req, res, next) => {
             password: hashedPassword,
         });
 
-        const session = await createSession(user._id);
-        setSessionCookies(res, session);
+        const tokens = generateTokens(user._id);
 
-        res.status(201).json({
-            user: {
-                id: user._id,
-                email: user.email,
-                name: user.name,
-            },
+        return res.status(201).json({
+            user: user.toJSON(),
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
         });
     } catch (err) {
         next(err);
     }
 };
 
+//
+// ===================== LOGIN =====================
+//
 export const loginUser = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
         const user = await User.findOne({ email });
-        if (!user) {
-            return next(createError(401, "Invalid credentials"));
-        }
+        if (!user) return next(createError(401, "Invalid credentials"));
 
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return next(createError(401, "Invalid credentials"));
-        }
+        if (!isMatch) return next(createError(401, "Invalid credentials"));
 
-        const session = await createSession(user._id);
-        setSessionCookies(res, session);
+        const tokens = generateTokens(user._id);
 
-        res.json({
-            user: {
-                id: user._id,
-                email: user.email,
-                name: user.name,
-            },
+        return res.json({
+            user: user.toJSON(),
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
         });
     } catch (err) {
         next(err);
     }
 };
 
-export const logoutUser = async (req, res) => {
-    const { sessionId } = req.cookies;
-
-    if (sessionId) {
-        await Session.deleteOne({ _id: sessionId });
-    }
-
-    res.clearCookie("sessionId");
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
-
-    res.status(204).send();
+//
+// ===================== LOGOUT =====================
+//
+export const logoutUser = (req, res) => {
+    res.json({ message: "Logged out successfully" });
 };
 
-export const refreshUserSession = async (req, res, next) => {
-    try {
-        const { sessionId, refreshToken } = req.cookies;
-
-        const session = await Session.findOne({
-            _id: sessionId,
-            refreshToken,
-        });
-
-        if (!session) {
-            return next(createError(401, "Session not found"));
-        }
-
-        const isExpired = new Date() > new Date(session.refreshTokenValidUntil);
-
-        if (isExpired) {
-            return next(createError(401, "Refresh token expired"));
-        }
-
-        await Session.deleteOne({ _id: session._id });
-
-        const newSession = await createSession(session.userId);
-        setSessionCookies(res, newSession);
-
-        res.json({ message: "Session refreshed" });
-    } catch (err) {
-        next(err);
-    }
-};
-
-export const getUserInfo = async (req, res) => {
+//
+// ===================== USER INFO =====================
+//
+export const getUserInfo = (req, res) => {
     res.json({
-        id: req.user._id,
-        email: req.user.email,
         name: req.user.name,
+        email: req.user.email,
     });
 };
 
-export const requestResetEmail = async (req, res) => {
-    res.json({
-        message: "Reset email sent (not implemented yet)",
-    });
+//
+// ===================== REFRESH =====================
+//
+export const refreshToken = (req, res, next) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return next(createError(401, "No refresh token"));
+        }
+
+        const payload = jwt.verify(
+            refreshToken,
+            process.env.JWT_REFRESH_SECRET,
+        );
+
+        const accessToken = jwt.sign(
+            { userId: payload.userId },
+            process.env.JWT_ACCESS_SECRET,
+            { expiresIn: "15m" },
+        );
+
+        return res.json({ accessToken });
+    } catch (err) {
+        next(createError(401, err.message || "Invalid refresh token"));
+    }
 };
 
-export const resetPassword = async (req, res) => {
-    res.json({
-        message: "Password reset (not implemented yet)",
-    });
+//
+// ===================== RESET PASSWORD =====================
+//
+export const requestResetEmail = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.json({ message: "If email exists, reset link sent" });
+        }
+
+        const token = crypto.randomBytes(32).toString("hex");
+
+        user.resetPasswordToken = token;
+        user.resetPasswordExpires = Date.now() + 30 * 60 * 1000;
+
+        await user.save();
+
+        await sendResetEmail(email, token);
+
+        res.json({ message: "Reset email sent" });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const resetPassword = async (req, res, next) => {
+    try {
+        const { token, password } = req.body;
+
+        const user = await User.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: Date.now() },
+        });
+
+        if (!user) {
+            return next(createError(400, "Invalid or expired token"));
+        }
+
+        user.password = await bcrypt.hash(password, 10);
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+
+        await user.save();
+
+        res.json({ message: "Password updated successfully" });
+    } catch (err) {
+        next(err);
+    }
 };

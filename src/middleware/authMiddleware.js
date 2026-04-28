@@ -1,48 +1,28 @@
 // src/middleware/authMiddleware.js
-
+import jwt from "jsonwebtoken";
 import createError from "http-errors";
-import { Session } from "../models/session.js";
 import User from "../models/user.js";
 
 export const authMiddleware = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
 
-        const accessToken =
-            req.cookies?.accessToken ||
-            (authHeader?.startsWith("Bearer ")
-                ? authHeader.split(" ")[1]
-                : null);
-
-        if (!accessToken) {
-            return next(createError(401, "No access token provided"));
+        if (!authHeader) {
+            return next(createError(401, "No token"));
         }
 
-        const session = await Session.findOne({ accessToken });
+        const token = authHeader.split(" ")[1];
 
-        if (!session) {
-            return next(createError(401, "Session not found"));
-        }
+        const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
 
-        const isAccessTokenExpired =
-            new Date() > new Date(session.accessTokenValidUntil);
+        const user = await User.findById(payload.userId);
 
-        if (isAccessTokenExpired) {
-            return next(createError(401, "Access token expired"));
-        }
-
-        const user = await User.findById(session.userId);
-
-        if (!user) {
-            return next(createError(401, "User not found"));
-        }
+        if (!user) return next(createError(401, "User not found"));
 
         req.user = user;
-        req.session = session;
 
         next();
-    } catch (err) {
-        console.error("Auth middleware error:", err);
+    } catch {
         next(createError(401, "Unauthorized"));
     }
 };

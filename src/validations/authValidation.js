@@ -13,7 +13,7 @@ export const registerUserSchema = {
 
         password: Joi.string()
             .min(8)
-            .pattern(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]+$/)
+            .pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)
             .required(),
     }),
 };
@@ -21,7 +21,7 @@ export const registerUserSchema = {
 export const loginUserSchema = {
     [Segments.BODY]: Joi.object({
         email: Joi.string().email().required(),
-        password: Joi.string().required(),
+        password: Joi.string().min(8).required(),
     }),
 };
 

@@ -1,24 +1,16 @@
 // src/controllers/statisticsController.js
-import mongoose from "mongoose";
 import Product from "../models/product.js";
 import Purchase from "../models/purchase.js";
 import createError from "http-errors";
 
 export const getStatistics = async (req, res, next) => {
     try {
-        const shopId = req.query.shopId || req.params.shopId;
-
-        if (!mongoose.Types.ObjectId.isValid(shopId)) {
-            return next(createError(400, "Invalid shopId"));
-        }
-
-        const shopObjectId = new mongoose.Types.ObjectId(shopId);
+        const shopId = req.params.shopId;
 
         const productsCount = await Product.countDocuments({ shopId });
 
         const stats = await Purchase.aggregate([
-            { $match: { shopId: shopObjectId } },
-
+            { $match: { shopId } },
             {
                 $group: {
                     _id: null,
@@ -28,35 +20,28 @@ export const getStatistics = async (req, res, next) => {
             },
         ]);
 
-        const totalRevenue = stats[0]?.totalRevenue || 0;
-        const purchasesCount = stats[0]?.purchasesCount || 0;
-
-        const lastClients = await Purchase.aggregate([
-            { $match: { shopId: shopObjectId } },
-
-            { $sort: { createdAt: -1 } },
-
-            {
-                $group: {
-                    _id: "$userId",
-                    lastPurchaseDate: { $first: "$createdAt" },
-                    totalSpent: { $sum: "$totalPrice" },
-                },
-            },
-
-            { $sort: { lastPurchaseDate: -1 } },
-            { $limit: 10 },
-        ]);
-
         res.json({
-            shopId,
             productsCount,
-            purchasesCount,
-            totalRevenue,
-            lastClients,
+            totalRevenue: stats[0]?.totalRevenue || 0,
+            purchasesCount: stats[0]?.purchasesCount || 0,
         });
-    } catch (error) {
-        console.error(error);
-        next(createError(500, "Failed to get statistics"));
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const getUserPurchases = async (req, res, next) => {
+    try {
+        if (req.user.id !== req.params.userId) {
+            return next(createError(403, "Forbidden"));
+        }
+
+        const purchases = await Purchase.find({
+            userId: req.params.userId,
+        }).populate("productId", "name price");
+
+        res.json(purchases);
+    } catch (err) {
+        next(err);
     }
 };

@@ -2,77 +2,75 @@
 
 import Shop from "../models/shop.js";
 import createError from "http-errors";
-import mongoose from "mongoose";
 
 export const createShop = async (req, res, next) => {
     try {
-        const { name, email, phone, address, logo } = req.body;
-
-        if (!name || !email) {
-            return next(createError(400, "Name and email are required"));
+        const exists = await Shop.findOne({ owner: req.user.id });
+        if (exists) {
+            return next(createError(409, "Shop already exists"));
         }
 
+        const logo = req.file ? req.file.path : null;
+
         const shop = await Shop.create({
-            name,
-            email,
-            phone,
-            address,
+            ...req.body,
             logo,
-            owner: req.user._id,
+            owner: req.user.id,
         });
 
         res.status(201).json(shop);
-    } catch (error) {
-        console.error(error);
-        next(createError(500, "Failed to create shop"));
+    } catch (err) {
+        next(err);
     }
 };
 
 export const getShopById = async (req, res, next) => {
     try {
-        const { shopId } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(shopId)) {
-            return next(createError(400, "Invalid shopId"));
-        }
-
-        const shop = await Shop.findById(shopId).populate(
+        const shop = await Shop.findById(req.params.shopId).populate(
             "owner",
             "name email",
         );
 
-        if (!shop) {
-            return next(createError(404, "Shop not found"));
-        }
+        if (!shop) return next(createError(404, "Shop not found"));
 
         res.json(shop);
-    } catch (error) {
-        console.error(error);
-        next(createError(500, "Failed to get shop"));
+    } catch (err) {
+        next(err);
     }
 };
 
 export const updateShop = async (req, res, next) => {
     try {
-        const { shopId } = req.params;
+        const shop = await Shop.findById(req.params.shopId);
 
-        if (!mongoose.Types.ObjectId.isValid(shopId)) {
-            return next(createError(400, "Invalid shopId"));
-        }
+        if (!shop) return next(createError(404, "Shop not found"));
 
-        const updates = req.body;
+        if (shop.owner.toString() !== req.user.id)
+            return next(createError(403, "Forbidden"));
 
-        const shop = await Shop.findByIdAndUpdate(shopId, updates, {
-            new: true,
-        });
+        Object.assign(shop, req.body);
 
-        if (!shop) {
-            return next(createError(404, "Shop not found"));
-        }
+        await shop.save();
 
         res.json(shop);
-    } catch (error) {
-        console.error(error);
-        next(createError(500, "Failed to update shop"));
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const deleteShop = async (req, res, next) => {
+    try {
+        const shop = await Shop.findById(req.params.shopId);
+
+        if (!shop) return next(createError(404, "Shop not found"));
+
+        if (shop.owner.toString() !== req.user.id)
+            return next(createError(403, "Forbidden"));
+
+        await shop.deleteOne();
+
+        res.json({ message: "Shop deleted" });
+    } catch (err) {
+        next(err);
     }
 };

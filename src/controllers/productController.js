@@ -1,113 +1,87 @@
 // src/controllers/productController.js
 import Product from "../models/product.js";
-import createError from "http-errors";
-import mongoose from "mongoose";
 
 export const getProducts = async (req, res, next) => {
     try {
-        const { search, category } = req.query;
         const { shopId } = req.params;
 
-        if (!mongoose.Types.ObjectId.isValid(shopId)) {
-            return next(createError(400, "Invalid shopId"));
-        }
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
 
-        const query = {
+        const { search = "", category = "" } = req.query;
+
+        const filter = {
             shopId,
+            ...(category && { category }),
+            ...(search && {
+                name: { $regex: search, $options: "i" },
+            }),
         };
 
-        if (search) {
-            query.name = { $regex: search, $options: "i" };
-        }
+        const products = await Product.find(filter)
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 });
 
-        if (category) {
-            query.category = category;
-        }
+        const total = await Product.countDocuments(filter);
 
-        const products = await Product.find(query);
-
-        res.json(products);
-    } catch (error) {
-        console.error(error);
-        next(createError(500, "Failed to get products"));
-    }
-};
-
-export const getProductById = async (req, res, next) => {
-    try {
-        if (!req.product) {
-            return next(createError(404, "Product not found"));
-        }
-
-        res.json(req.product);
-    } catch (error) {
-        console.error(error);
-        next(createError(500, "Failed to get product"));
+        res.json({
+            data: products,
+            page,
+            totalPages: Math.ceil(total / limit),
+            totalItems: total,
+        });
+    } catch (err) {
+        next(err);
     }
 };
 
 export const addProduct = async (req, res, next) => {
     try {
-        const { shopId } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(shopId)) {
-            return next(createError(400, "Invalid shopId"));
-        }
-
-        const { name, price, description, category, stock, suppliers } =
-            req.body;
-
-        if (!name || !price || !category) {
-            return next(
-                createError(400, "Name, price and category are required"),
-            );
-        }
-
-        const newProduct = await Product.create({
-            name,
-            price,
-            description,
-            category,
-            stock,
-            suppliers,
-            shopId,
+        const product = await Product.create({
+            ...req.body,
+            shopId: req.params.shopId,
         });
 
-        res.status(201).json(newProduct);
-    } catch (error) {
-        console.error(error);
-        next(createError(500, "Failed to create product"));
+        res.status(201).json(product);
+    } catch (err) {
+        next(err);
     }
+};
+
+export const getProductById = async (req, res) => {
+    res.json(req.product);
 };
 
 export const updateProduct = async (req, res, next) => {
     try {
-        if (!req.product) {
-            return next(createError(404, "Product not found"));
-        }
+        const product = req.product;
 
-        Object.assign(req.product, req.body);
+        const allowedFields = [
+            "name",
+            "price",
+            "description",
+            "category",
+            "stock",
+            "suppliers",
+        ];
 
-        await req.product.save();
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                product[field] = req.body[field];
+            }
+        });
 
-        res.json(req.product);
-    } catch (error) {
-        console.error(error);
-        next(createError(500, "Failed to update product"));
+        await product.save();
+
+        res.json(product);
+    } catch (err) {
+        next(err);
     }
 };
 
-export const deleteProduct = async (req, res, next) => {
-    try {
-        if (!req.product) {
-            return next(createError(404, "Product not found"));
-        }
-
-        await req.product.deleteOne();
-
-        res.json({ message: "Product deleted successfully" });
-    } catch (error) {
-        console.error(error);
-        next(createError(500, "Failed to delete product"));
-    }
+export const deleteProduct = async (req, res) => {
+    await req.product.deleteOne();
+    res.json({ message: "Product deleted" });
 };
